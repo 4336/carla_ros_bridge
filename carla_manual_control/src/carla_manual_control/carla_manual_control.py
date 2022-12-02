@@ -189,7 +189,7 @@ class KeyboardControl(object):
 
         self.vehicle_control_publisher = self.node.new_publisher(
             CarlaEgoVehicleControl,
-            "/carla/{}/vehicle_control_cmd_manual".format(self.role_name),
+            "/carla/{}/vehicle_control_cmd_manual2".format(self.role_name),
             qos_profile=fast_qos)
 
         self.carla_status_subscriber = self.node.new_subscription(
