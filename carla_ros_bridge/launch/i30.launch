@@ -7,6 +7,7 @@
 
   <!-- Ego vehicle -->
   <arg name='role_name' default='ego_vehicle'/>
+  <arg name='virtual_role_name' default='virtual_vehicle'/>
   <arg name="vehicle_filter" default='vehicle.*'/>
   <arg name="spawn_point" default=""/><!-- use comma separated format "x,y,z,roll,pitch,yaw" -->
 
@@ -17,16 +18,18 @@
   <arg name='passive' default=''/>
 
   <!-- Synchronous mode-->
+  <arg name='synchronous_mode' default='True'/>
   <arg name='synchronous_mode_wait_for_vehicle_control_command' default='False'/>
-  <arg name='fixed_delta_seconds' default='0.0333'/>
+  <arg name='fixed_delta_seconds' default='0.0333333'/>
 
 
-  <include file="$(find carla_ros_bridge)/launch/carla_ros_bridge.launch">
+  <include file="$(find carla_ros_bridge)/launch/carla_ros_bridge_i30.launch">
     <arg name='host' value='$(arg host)'/>
     <arg name='port' value='$(arg port)'/>
     <arg name='town' value='$(arg town)'/>
     <arg name='timeout' value='$(arg timeout)'/>
     <arg name='passive' value='$(arg passive)'/>
+    <arg name='synchronous_mode' value='$(arg synchronous_mode)'/>
     <arg name='synchronous_mode_wait_for_vehicle_control_command' value='$(arg synchronous_mode_wait_for_vehicle_control_command)'/>
     <arg name='fixed_delta_seconds' value='$(arg fixed_delta_seconds)'/>
   </include>

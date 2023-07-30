@@ -207,10 +207,7 @@ class CarlaToRosWaypointConverter(CompatibleNode):
         route = grp.trace_route(self.ego_vehicle.get_location(),
                                 carla.Location(goal.location.x,
                                                goal.location.y,
-                                               goal.location.z),
-                                self.ego_vehicle.get_transform().rotation.yaw,
-                                goal.rotation.yaw)
-        self.loginfo("heading: {}".format(goal.rotation.yaw))
+                                               goal.location.z))
 
         return route
 

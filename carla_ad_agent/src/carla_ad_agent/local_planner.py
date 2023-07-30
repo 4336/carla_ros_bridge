@@ -144,12 +144,18 @@ class LocalPlanner(CompatibleNode):
                 return
 
             #   Buffering the waypoints
+            print("buf,que1")
+            print(len(self._waypoint_buffer))
+            print(len(self._waypoints_queue))
             if not self._waypoint_buffer:
                 for i in range(self._buffer_size):
                     if self._waypoints_queue:
                         self._waypoint_buffer.append(self._waypoints_queue.popleft())
                     else:
                         break
+            print("buf,que2")
+            print(len(self._waypoint_buffer))
+            print(len(self._waypoints_queue))
 
             # target waypoint
             target_pose = self._waypoint_buffer[0]

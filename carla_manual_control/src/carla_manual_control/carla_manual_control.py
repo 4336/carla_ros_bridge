@@ -93,7 +93,7 @@ class ManualControl(CompatibleNode):
         self.controller = KeyboardControl(self.role_name, self.hud, self)
 
         self.image_subscriber = self.new_subscription(
-            Image, "/carla/{}/rgb_view/image".format(self.role_name),
+            Image, "/carla/{}/front_cam/image".format(self.role_name),
             self.on_view_image, qos_profile=10)
 
         self.collision_subscriber = self.new_subscription(
@@ -608,6 +608,9 @@ class HelpText(object):
 # -- main() --------------------------------------------------------------------
 # ==============================================================================
 
+import os
+from screeninfo import get_monitors
+
 def main(args=None):
     """
     main function
@@ -615,7 +618,19 @@ def main(args=None):
     roscomp.init("manual_control", args=args)
 
     # resolution should be similar to spawned camera with role-name 'view'
-    resolution = {"width": 800, "height": 600}
+    resolution = {"width": 640, "height": 360}
+
+### spawn window on top right
+    # Get the bounds of the users monitors, and select the first one
+    monitors = get_monitors() # Get the resolution of all of the users monitors
+    screen_width = monitors[0].width # Get width of first monitor found
+    screen_height = monitors[0].height # Get height of first monitor found
+
+    pos_x = screen_width * 1.5 - resolution['width']/2
+    pos_y = screen_height + 28# - resolution['height']
+    os.environ['SDL_VIDEO_WINDOW_POS'] = '%i,%i' % (pos_x,pos_y)
+    os.environ['SDL_VIDEO_CENTERED'] = '0'
+###
 
     pygame.init()
     pygame.font.init()

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Copyright (c) 2018-2020 Intel Corporation
 #
@@ -19,7 +19,7 @@ except ImportError:
     import Queue as queue
 import sys
 from distutils.version import LooseVersion
-from threading import Thread, Lock, Event
+from threading import Thread, Lock, Event, Timer
 
 import carla
 
@@ -135,6 +135,9 @@ class CarlaRosBridge(CompatibleNode):
                                       lambda control: self.carla_control_queue.put(control.command),
                                       qos_profile=10, callback_group=self.callback_group)
 
+            self.tick_controller = Event()
+            self.tick_timer()
+
             self.synchronous_mode_update_thread = Thread(
                 target=self._synchronous_mode_update)
             self.synchronous_mode_update_thread.start()
@@ -246,6 +249,13 @@ class CarlaRosBridge(CompatibleNode):
                 self.carla_control_queue.put(CarlaControl.PAUSE)
                 return
 
+    def tick_timer(self):
+        if not self.shutdown.is_set() and roscomp.ok():
+            t = Timer(self.parameters["fixed_delta_seconds"], self.tick_timer)
+            t.start()
+            self.tick_controller.set()
+            # print("tick: {}".format(self.ros_timestamp))
+
     def _synchronous_mode_update(self):
         """
         execution loop for synchronous mode
@@ -259,8 +269,7 @@ class CarlaRosBridge(CompatibleNode):
                 with self._expected_ego_vehicle_control_command_ids_lock:
                     for actor_id, actor in self.actor_factory.actors.items():
                         if isinstance(actor, EgoVehicle):
-                            self._expected_ego_vehicle_control_command_ids.append(
-                                actor_id)
+                            self._expected_ego_vehicle_control_command_ids.append(actor_id)
 
             self.actor_factory.update_available_objects()
             frame = self.carla_world.tick()
@@ -274,14 +283,25 @@ class CarlaRosBridge(CompatibleNode):
             self._update(frame, world_snapshot.timestamp.elapsed_seconds)
             self.logdebug("Waiting for sensor data finished.")
 
+            if not self.tick_controller.wait(0.1):
+                self.logwarn("Timeout (0.1s) while waiting for tick")
+            self.tick_controller.clear()
+
             if self.parameters['synchronous_mode_wait_for_vehicle_control_command']:
                 # wait for all ego vehicles to send a vehicle control command
-                if self._expected_ego_vehicle_control_command_ids:
+                # print(self._expected_ego_vehicle_control_command_ids)
+                if self._expected_ego_vehicle_control_command_ids or True: # True for force wait vehicle command
+                    # tic = self.get_time()
+                    # print("before: "+str(tic)+"sec")
                     if not self._all_vehicle_control_commands_received.wait(CarlaRosBridge.VEHICLE_CONTROL_TIMEOUT):
                         self.logwarn("Timeout ({}s) while waiting for vehicle control commands. "
                                      "Missing command from actor ids {}".format(CarlaRosBridge.VEHICLE_CONTROL_TIMEOUT,
                                                                                 self._expected_ego_vehicle_control_command_ids))
                     self._all_vehicle_control_commands_received.clear()
+                    # toc = self.get_time()
+                    # print("after: "+str(toc)+"sec")
+                    # if toc - tic > 0:
+                    #     self.logerr(str(toc-tic))
 
     def _carla_time_tick(self, carla_snapshot):
         """
