@@ -28,6 +28,7 @@ Use ARROWS or WASD keys for control.
 
 from __future__ import print_function
 
+import time
 import datetime
 import math
 from threading import Thread
@@ -104,6 +105,10 @@ class ManualControl(CompatibleNode):
             CarlaLaneInvasionEvent, "/carla/{}/lane_invasion".format(self.role_name),
             self.on_lane_invasion, qos_profile=10)
 
+        self.tic = time.time()
+        self.toc = time.time()
+        self.w_fps = 0.0
+
     def on_collision(self, data):
         """
         Callback on collision event
@@ -138,6 +143,11 @@ class ManualControl(CompatibleNode):
         array = array[:, :, :3]
         array = array[:, :, ::-1]
         self._surface = pygame.surfarray.make_surface(array.swapaxes(0, 1))
+
+        self.toc = time.time()
+        self.w_fps = 1/(self.toc - self.tic)
+        self.tic = self.toc
+        self.hud.update_fps(self.w_fps)
 
     def render(self, game_clock, display):
         """
@@ -359,6 +369,12 @@ class HUD(object):
             self.carla_status_updated,
             qos_profile=10)
 
+        self.w_fps = 0.0;
+
+    def update_fps(self, w_fps):
+        alpha = 0.1
+        self.w_fps = (1-alpha)*self.w_fps + alpha*w_fps
+
     def tick(self, clock):
         """
         tick method
@@ -436,7 +452,8 @@ class HUD(object):
         self._info_text = [
             'Frame: % 22s' % self.carla_status.frame,
             'Simulation time: % 12s' % time,
-            'FPS: % 24.1f' % fps, '',
+            'FPS: % 24.1f' % fps,
+            'Walltime FPS: % 15.1f' % self.w_fps, '',
             'Vehicle: % 20s' % ' '.join(self.vehicle_info.type.title().split('.')[1:]),
             'Speed:   % 15.0f km/h' % (3.6 * self.vehicle_status.velocity),
             u'Heading:% 16.0f\N{DEGREE SIGN} % 2s' % (yaw, heading),
@@ -618,7 +635,8 @@ def main(args=None):
     roscomp.init("manual_control", args=args)
 
     # resolution should be similar to spawned camera with role-name 'view'
-    resolution = {"width": 640, "height": 360}
+    # resolution = {"width": 640, "height": 360}
+    resolution = {"width": 840, "height": 360}
 
 ### spawn window on top right
     # Get the bounds of the users monitors, and select the first one
